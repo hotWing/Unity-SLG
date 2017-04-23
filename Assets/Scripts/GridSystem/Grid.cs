@@ -90,6 +90,83 @@ namespace GridSystem
             }
         }
 
+        /// <summary>
+        /// 用于朝着敌方移动
+        /// </summary>
+        /// <param name="fromNodeObj"></param>
+        /// <param name="toNodeObj"></param>
+        /// <returns></returns>
+        public List<GameObject> getPathToEnermy(GameObject fromNodeObj, GameObject toNodeObj, int attackRange)
+        {
+            Node startNode = fromNodeObj.GetComponent<Node>();
+            Node targetNode = toNodeObj.GetComponent<Node>();
+
+            //获得所有目标周围能移动到的，并且能攻击到目标的nodeObj
+            List<GameObject> potentialNodeObjs = getMovableNodeObjs(toNodeObj, attackRange);
+
+            HashSet<Node> closedSet = new HashSet<Node>();
+            List<Node> openSet = new List<Node>();
+            startNode.gCost = 0;
+            startNode.hCost = 0;
+            openSet.Add(startNode);
+            while (openSet.Count != 0)
+            {
+                Node currentNode = openSet[0];
+                for (int i = 1; i < openSet.Count; i++)
+                {
+                    if (openSet[i].fCost < currentNode.fCost
+                        || openSet[i].fCost == currentNode.fCost && openSet[i].hCost < currentNode.hCost)
+                    {
+                        currentNode = openSet[i];
+                    }
+                }
+                openSet.Remove(currentNode);
+                closedSet.Add(currentNode);
+
+                //结束
+                if (potentialNodeObjs.Contains(currentNode.gameObject))
+                {
+                    List<GameObject> path = new List<GameObject>();
+                    Node currNode = currentNode;
+                    while (!currNode.Equals(startNode))
+                    {
+                        path.Add(currNode.gameObject);
+                        currNode = currNode.parent;
+                    }
+                    path.Add(startNode.gameObject);
+                    path.Reverse();
+                    return path;
+                }
+
+                foreach (GameObject neighbourObj in getAdjacentMovableNodeObjs(currentNode.gameObject))
+                {
+                    Node neighbour = neighbourObj.GetComponent<Node>();
+                    //注意这里的NodeStatus.Normal，如果地图上的nodes，没有clear,例如存在movable,会导致算法错误，之前浪费很多时间在这！！！！
+                    if (neighbour.Status != NodeStatus.Normal || closedSet.Contains(neighbour))
+                    {
+                        continue;
+                    }
+                    int movementCostToNeighbour = currentNode.gCost + 1;
+                    if (!openSet.Contains(neighbour))
+                    {
+                        neighbour.gCost = movementCostToNeighbour;
+                        neighbour.hCost = getNodeDistance(neighbour, targetNode);
+                        neighbour.parent = currentNode;
+
+                        openSet.Add(neighbour);
+                    }
+                    else if(movementCostToNeighbour < neighbour.gCost)
+                    {
+                        neighbour.gCost = movementCostToNeighbour;
+                        neighbour.hCost = getNodeDistance(neighbour, targetNode);
+                        neighbour.parent = currentNode;
+                    }
+                }
+            }
+            return null;
+
+        }
+
         public List<GameObject> getShortestPath(GameObject fromNodeObj, GameObject toNodeObj)
         {
             Node startNode = fromNodeObj.GetComponent<Node>();
@@ -114,7 +191,7 @@ namespace GridSystem
 
 
                 //结束
-                if(currentNode.Equals(targetNode))
+                if(currentNode.Equals(targetNode))//到达目标node
                 {
                     List<GameObject> path = new List<GameObject>();
                     Node currNode = targetNode;

@@ -36,7 +36,7 @@ namespace Character
         public static Action OnAttackComplete;
         private Unit attackee;
 
-        public static Action OnUnitIdle;
+        public static Action<Unit> OnUnitIdle;
         public static Action OnMoveComplete;
 
         private Vector3 returnPos;
@@ -79,7 +79,13 @@ namespace Character
             setStatus(UnitStatus.Ready);
         }
 
-        public IEnumerator move(List<GameObject> path)
+
+        public void move(List<GameObject> path)
+        {
+            StartCoroutine(moveCoroutine(path));
+        }
+
+        private IEnumerator moveCoroutine(List<GameObject> path)
         {
             returnPos = transform.position;
             returnRot = transform.rotation;
@@ -152,7 +158,7 @@ namespace Character
                 case UnitStatus.Idle:
                     status = UnitStatus.Idle;
                     renderer1.material.color = Color.red;
-                    OnUnitIdle();
+                    OnUnitIdle(this);
                     break;
                 case UnitStatus.Ready:
                     status = UnitStatus.Ready;

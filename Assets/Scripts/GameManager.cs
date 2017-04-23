@@ -52,6 +52,7 @@ public class GameManager : MonoBehaviour {
 
         nodeLayer = LayerMask.NameToLayer("Node");
         unitLayer = LayerMask.NameToLayer("Unit");
+
     }
 
     void Update()
@@ -98,13 +99,21 @@ public class GameManager : MonoBehaviour {
         Quaternion team2Rot = Quaternion.Euler(0, 270, 0);
         Texture team2Tex = Resources.Load("Textures/WK_StandardUnits_Red") as Texture;
         team2Units = new List<Unit>();
-        addUnit(swordManPrefab, Team.Team2, Grid.instance.NodeObjs[2, 3].transform.position, team2Rot, team2Units,team2Tex);
-        addUnit(spearManPrefab, Team.Team2, Grid.instance.NodeObjs[2, 4].transform.position, team2Rot, team2Units, team2Tex);
-        addUnit(archerPrefab, Team.Team2, Grid.instance.NodeObjs[2, 5].transform.position, team2Rot, team2Units, team2Tex);
+        addUnit(swordManPrefab, Team.Team2, Grid.instance.NodeObjs[9, 3].transform.position, team2Rot, team2Units,team2Tex);
+        addUnit(spearManPrefab, Team.Team2, Grid.instance.NodeObjs[9, 4].transform.position, team2Rot, team2Units, team2Tex);
+        addUnit(archerPrefab, Team.Team2, Grid.instance.NodeObjs[9, 5].transform.position, team2Rot, team2Units, team2Tex);
+
+        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[0, 3], NodeStatus.Occupied);
+        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[0, 4], NodeStatus.Occupied);
+        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[0, 5], NodeStatus.Occupied);
+        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[9, 3], NodeStatus.Occupied);
+        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[9, 4], NodeStatus.Occupied);
+        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[9, 5], NodeStatus.Occupied);
+
 
         Unit.OnAttackComplete = onUnitAttackComplete;
-        Unit.OnUnitIdle = onUnitIdle;
         Unit.OnMoveComplete = onUnitMoveComplete;
+        Unit.OnUnitIdle = onUnitIdle;
     }
 
     private void addUnit(GameObject unitPrefab, Team team,Vector3 pos, Quaternion rot, List<Unit> teamUnits, Texture texture = null)
@@ -150,7 +159,7 @@ public class GameManager : MonoBehaviour {
                 else if (hitNode.Status == NodeStatus.Movable)
                 {
                     List<GameObject> path = Grid.instance.getShortestPath(selectedUnitNodeObj, hitNode.gameObject);
-                    StartCoroutine(selectedUnit.move(path));
+                    selectedUnit.move(path);
                     Grid.instance.clear();
                     BattleMenu.instance.hideIdle();
                 }
@@ -208,32 +217,10 @@ public class GameManager : MonoBehaviour {
         BattleMenu.instance.showIdle();
     }
 
-    //public void showBattleMenu(bool moved)
-    //{
-    //    List<GameObject> AttackableNodeObjs = Grid.instance.getAttackableNodeObjs();
-
-    //    Vector3 menuPos = Camera.main.WorldToScreenPoint(selectedUnit.transform.position);
-
-    //    //float resolutionRatio = (float)Screen.width / refWidth;
-    //    //menuPos.x = menuPos.x / resolutionRatio + 50;
-    //    //menuPos.y = menuPos.y / resolutionRatio + 50;
-
-    //    menuPos.x = menuPos.x + 50;
-    //    menuPos.y = menuPos.y + 50;
-
-    //    BattleMenu.instance.gameObject.SetActive(true);
-    //    RectTransform battleMenuRectTrans = BattleMenu.instance.gameObject.GetComponent<RectTransform>();
-    //    battleMenuRectTrans.anchoredPosition = menuPos;
-
-    //    BattleMenu.instance.AttackBtnObj.SetActive(AttackableNodeObjs != null && AttackableNodeObjs.Count > 0);
-    //    BattleMenu.instance.MoveBtnObj.SetActive(!moved);
-
-    //    selectionTarget = SelectionTarget.BattleMenu;
-    //}
-
-    private void onUnitIdle()
+    private void onUnitIdle(Unit unitOnIdle)
     {
-        currentNotPlayedUnits.Remove(selectedUnit);
+        currentNotPlayedUnits.Remove(unitOnIdle);
+        Grid.instance.clear();
         if (currentNotPlayedUnits.Count == 0)
             switchTeam();
     }
@@ -243,17 +230,27 @@ public class GameManager : MonoBehaviour {
         selectedUnit = null;
         switch(currentTurnTeam)
         {
-            case Team.Team1:
+            case Team.Team1://切换到敌人
+
                 resetTeamStatus(team1Units);
                 currentTurnTeam = Team.Team2;
                 currentNotPlayedUnits = new List<Unit>(team2Units);
+                AIController.playerTeam = team1Units;
+                AIController.enermyTeam = team2Units;
                 TurnIdicator.instance.showTurn("Enermy's Turn", Color.red);
+                Unit.OnAttackComplete = AIController.onUnitAttackComplete;
+                Unit.OnUnitIdle = AIController.onUnitIdle;
+                Unit.OnMoveComplete = AIController.onUnitMoveComplete;
+                AIController.takeAction();
                 break;
             case Team.Team2:
                 resetTeamStatus(team2Units);
                 currentTurnTeam = Team.Team1;
                 currentNotPlayedUnits = new List<Unit>(team1Units);
                 TurnIdicator.instance.showTurn("Turn " + ++turnCount, Color.blue);
+                Unit.OnAttackComplete = onUnitAttackComplete;
+                Unit.OnUnitIdle = onUnitIdle;
+                Unit.OnMoveComplete = onUnitMoveComplete;
                 break;
         }
     }
