@@ -125,6 +125,11 @@ namespace Character
         public void attack(Unit attackee)
         {
             status = UnitStatus.Attacking;
+
+            Vector3 faceDir = (attackee.transform.position - transform.position).normalized;
+            faceDir.y = 0;
+            transform.forward = faceDir;
+
             animator.SetTrigger("attack");
             this.attackee = attackee;
         }

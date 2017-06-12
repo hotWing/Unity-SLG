@@ -149,9 +149,9 @@ public class GameManager : MonoBehaviour {
                 }
                 else if (hitNode.Status == NodeStatus.Attackable)
                 {
-                    Vector3 faceDir = (hitNode.transform.position - selectedUnit.transform.position).normalized;
-                    faceDir.y = 0;
-                    selectedUnit.transform.forward = faceDir;
+                    //Vector3 faceDir = (hitNode.transform.position - selectedUnit.transform.position).normalized;
+                    //faceDir.y = 0;
+                    //selectedUnit.transform.forward = faceDir;
                     selectedUnit.attack(Grid.instance.getUnitOnNode(hitNode));
                     Grid.instance.clear();
                     BattleMenu.instance.hideIdle();
@@ -225,7 +225,7 @@ public class GameManager : MonoBehaviour {
             switchTeam();
     }
 
-    private void switchTeam()
+    public void switchTeam()
     {
         selectedUnit = null;
         switch(currentTurnTeam)
@@ -237,16 +237,17 @@ public class GameManager : MonoBehaviour {
                 currentNotPlayedUnits = new List<Unit>(team2Units);
                 AIController.playerTeam = team1Units;
                 AIController.enermyTeam = team2Units;
+                TurnIdicator.OnEnd += AIController.OnTurnIndicatorEnd;
                 TurnIdicator.instance.showTurn("Enermy's Turn", Color.red);
                 Unit.OnAttackComplete = AIController.onUnitAttackComplete;
                 Unit.OnUnitIdle = AIController.onUnitIdle;
                 Unit.OnMoveComplete = AIController.onUnitMoveComplete;
-                AIController.takeAction();
                 break;
             case Team.Team2:
                 resetTeamStatus(team2Units);
                 currentTurnTeam = Team.Team1;
                 currentNotPlayedUnits = new List<Unit>(team1Units);
+                TurnIdicator.OnEnd -= AIController.OnTurnIndicatorEnd;
                 TurnIdicator.instance.showTurn("Turn " + ++turnCount, Color.blue);
                 Unit.OnAttackComplete = onUnitAttackComplete;
                 Unit.OnUnitIdle = onUnitIdle;

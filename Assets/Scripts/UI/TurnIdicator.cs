@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,7 +8,7 @@ namespace UI
     public class TurnIdicator : MonoBehaviour
     {
         public static TurnIdicator instance;
-
+        public static event EventHandler OnEnd;
         public float acceleration = 500f;
         // Use this for initialization
         private Transform textTrans;
@@ -64,6 +65,9 @@ namespace UI
             }
 
             gameObject.SetActive(false);
+
+            if(OnEnd != null)
+                OnEnd(this,null);
         }
 
     }

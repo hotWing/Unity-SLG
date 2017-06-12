@@ -102,6 +102,9 @@ namespace GridSystem
             Node targetNode = toNodeObj.GetComponent<Node>();
 
             //获得所有目标周围能移动到的，并且能攻击到目标的nodeObj
+            //这里有个缺点，getMovableNodeObjs本来是用于移动的，所以会被unit阻挡，导致了攻击范围也会被阻挡
+            //最好另写一个获取攻击范围的
+            要解决的问题：其实位置不在潜在目标里面，导致即使能攻击，也必须要移动
             List<GameObject> potentialNodeObjs = getMovableNodeObjs(toNodeObj, attackRange);
 
             HashSet<Node> closedSet = new HashSet<Node>();

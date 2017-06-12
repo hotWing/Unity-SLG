@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Character;
 using GridSystem;
+using System;
 
 public class AIController {
     public static bool isEnermyMoving = false;
@@ -10,8 +11,8 @@ public class AIController {
     public static List<Unit> playerTeam;
 
     private static int enermyIndex;
-
-    public static void takeAction()
+    private static Unit attackee;
+    public static void OnTurnIndicatorEnd(object sender, EventArgs e)
     {
         isEnermyMoving = true;
 
@@ -36,28 +37,44 @@ public class AIController {
             GameObject endNodeObj = Grid.instance.getNodeObjFromPosition(playerUnit.transform.position);
             List<GameObject> curPath =  Grid.instance.getPathToEnermy(startNodeObj, endNodeObj,enermyUnit.attackRange);
             if (minPath == null || curPath.Count < minPath.Count)
+            {
+                attackee = playerUnit;
                 minPath = curPath;
+            }
         }
 
-        //去掉path中超出移动力的nodes
+        //没有到达可攻击的位置，去掉path中超出移动力的nodes
         if (minPath.Count - 1 > enermyUnit.speed)
-            minPath.RemoveRange(enermyUnit.speed+1, minPath.Count-1 - enermyUnit.speed);
+        {
+            minPath.RemoveRange(enermyUnit.speed + 1, minPath.Count - 1 - enermyUnit.speed);
+            attackee = null;//设为null来指示没到达可以攻击位置，不能攻击
+        }
 
         return minPath;
     }
 
     public static void onUnitAttackComplete()
     {
-
+        //Unit enermyUnit = enermyTeam[enermyIndex];
+        //enermyUnit.setStatus(UnitStatus.Idle);
     }
     public static void onUnitIdle(Unit enermyUnit)
     {
         enermyIndex++;
-        nextEnermyUnit();
+        if (enermyIndex < enermyTeam.Count)
+            nextEnermyUnit();
+        else
+        {
+            isEnermyMoving = false;
+            GameManager.instance.switchTeam();
+        }
     }
     public static void onUnitMoveComplete()
     {
         Unit enermyUnit = enermyTeam[enermyIndex];
-        enermyUnit.setStatus(UnitStatus.Idle);
+        if (attackee != null)
+            enermyUnit.attack(attackee);
+        else
+            enermyUnit.setStatus(UnitStatus.Idle);
     }
 }
