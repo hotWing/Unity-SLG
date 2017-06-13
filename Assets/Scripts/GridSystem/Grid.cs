@@ -102,10 +102,7 @@ namespace GridSystem
             Node targetNode = toNodeObj.GetComponent<Node>();
 
             //获得所有目标周围能移动到的，并且能攻击到目标的nodeObj
-            //这里有个缺点，getMovableNodeObjs本来是用于移动的，所以会被unit阻挡，导致了攻击范围也会被阻挡
-            //最好另写一个获取攻击范围的
-            要解决的问题：其实位置不在潜在目标里面，导致即使能攻击，也必须要移动
-            List<GameObject> potentialNodeObjs = getMovableNodeObjs(toNodeObj, attackRange);
+            List<GameObject> potentialNodeObjs = getAllNodesWithinRange(toNodeObj, attackRange);
 
             HashSet<Node> closedSet = new HashSet<Node>();
             List<Node> openSet = new List<Node>();
@@ -306,7 +303,6 @@ namespace GridSystem
             int y = (int)((position.z + realSizeY / 2 - transform.position.z) / (nodeSize + spaceBetweenNodes));
             if (x < horiCount && y < vertCount)
             {
-                GameObject tempNodeObj = nodeObjs[x, y];
                 float distX = Mathf.Abs(position.x - nodeObjs[x, y].transform.position.x);
                 float distZ = Mathf.Abs(position.z - nodeObjs[x, y].transform.position.z);
                 if (distX <= nodeSize/2 && distZ <= nodeSize/2)
@@ -424,6 +420,38 @@ namespace GridSystem
             node.changeStatus(status);
         }
 
+        public List<GameObject> getAllNodesWithinRange(GameObject centerNodeObj, int range)
+        {
+            List<GameObject> resNodeObjs = new List<GameObject>();
+            Node startNode = centerNodeObj.GetComponent<Node>();
+            List<GameObject> closedSet = new List<GameObject>();
+            Stack<GameObject> s = new Stack<GameObject>();
+            startNode.gCost = 0;
+            s.Push(centerNodeObj);
+
+            while (s.Count != 0)
+            {
+                GameObject curNodeObj = s.Pop();
+                Node curNode = curNodeObj.GetComponent<Node>();
+                foreach (GameObject nodeObj in getAdjacentNodeObjs(curNodeObj))
+                {
+                    Node node = nodeObj.GetComponent<Node>();
+                    if (!closedSet.Contains(nodeObj))
+                    {
+                        int CostToNodeObj = curNode.gCost + 1;
+                        if (CostToNodeObj <= range)
+                        {
+                            node.gCost = CostToNodeObj;
+                            closedSet.Add(nodeObj);
+                            resNodeObjs.Add(nodeObj);
+                            s.Push(nodeObj);
+                        }
+                    }
+                }
+            }
+            return resNodeObjs;
+        }
+
         public List<GameObject> getAttackableNodeObjs()
         {
             List<GameObject>  attackableNodeObjs = new List<GameObject>();
@@ -458,7 +486,6 @@ namespace GridSystem
                     }
                 }
             }
-
             return attackableNodeObjs;
         }
 

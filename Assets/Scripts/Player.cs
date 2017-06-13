@@ -7,7 +7,6 @@ public class Player : MonoBehaviour {
     public float rotSpeed = 10;
     
     Rigidbody rBody;
-    private static Vector3 defaultLocation = new Vector3(11.8f, 18.36f,0);
     private Transform eye;
  
 

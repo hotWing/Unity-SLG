@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
+﻿using UnityEngine.UI;
+using UnityEngine;
 
 namespace UI
 {
@@ -14,9 +14,9 @@ namespace UI
             hpBar = GetComponentInChildren<Slider>();
 
             //自动添加到canvas下面，scale设为1
-            transform.parent = GameManager.healthBarContainerObj.transform;
-            RectTransform healthBarRectTrans = GetComponent<RectTransform>();
-            healthBarRectTrans.localScale = Vector3.one;
+            transform.SetParent(GameManager.healthBarContainerObj.transform, false);
+            //RectTransform healthBarRectTrans = GetComponent<RectTransform>();
+            //healthBarRectTrans.localScale = Vector3.one;
         }
 
         public void setHpMax(int value)

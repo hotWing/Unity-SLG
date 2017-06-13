@@ -3,6 +3,7 @@ using GridSystem;
 using System.Collections.Generic;
 using Character;
 using UI;
+using System;
 
 public enum Team
 {
@@ -10,7 +11,8 @@ public enum Team
     Team2
 }
 
-public class GameManager : MonoBehaviour {
+public class GameManager : MonoBehaviour
+{
     //public static int refWidth = 800;
     public static float unitMoveSpeed = 5f;
     public static GameManager instance;
@@ -21,14 +23,14 @@ public class GameManager : MonoBehaviour {
 
     private Team currentTurnTeam;//当前行动的阵营
     private List<Unit> currentNotPlayedUnits;
-    private List<Unit> team1Units;
-    private List<Unit> team2Units;
+    public static List<Unit> team1Units;
+    public static List<Unit> team2Units;
     private int turnCount;
 
     public static int nodeLayer;
     public static int unitLayer;
     private GameObject nodeObjMouseOver;
-	void Start()
+    void Start()
     {
         // if the singleton hasn't been initialized yet
         if (instance != null && instance != this)
@@ -59,10 +61,10 @@ public class GameManager : MonoBehaviour {
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
-        if(Physics.Raycast(ray, out hit, 1000,1<<nodeLayer))
+        if (Physics.Raycast(ray, out hit, 1000, 1 << nodeLayer))
         {
             GameObject hitNodeObj = Grid.instance.getNodeObjFromPosition(hit.point);
-            if(!hitNodeObj.Equals(nodeObjMouseOver))
+            if (!hitNodeObj.Equals(nodeObjMouseOver))
             {
                 if (nodeObjMouseOver != null)
                     nodeObjMouseOver.GetComponent<Renderer>().material.SetInt("_Animate", 0);
@@ -78,7 +80,7 @@ public class GameManager : MonoBehaviour {
                 nodeObjMouseOver = null;
             }
         }
-        
+
     }
 
     /// <summary>
@@ -92,14 +94,14 @@ public class GameManager : MonoBehaviour {
 
         Quaternion team1Rot = Quaternion.Euler(0, 90, 0);
         team1Units = new List<Unit>();
-        addUnit(swordManPrefab, Team.Team1, Grid.instance.NodeObjs[0, 3].transform.position,team1Rot,team1Units);
+        addUnit(swordManPrefab, Team.Team1, Grid.instance.NodeObjs[0, 3].transform.position, team1Rot, team1Units);
         addUnit(spearManPrefab, Team.Team1, Grid.instance.NodeObjs[0, 4].transform.position, team1Rot, team1Units);
         addUnit(archerPrefab, Team.Team1, Grid.instance.NodeObjs[0, 5].transform.position, team1Rot, team1Units);
 
         Quaternion team2Rot = Quaternion.Euler(0, 270, 0);
         Texture team2Tex = Resources.Load("Textures/WK_StandardUnits_Red") as Texture;
         team2Units = new List<Unit>();
-        addUnit(swordManPrefab, Team.Team2, Grid.instance.NodeObjs[9, 3].transform.position, team2Rot, team2Units,team2Tex);
+        addUnit(swordManPrefab, Team.Team2, Grid.instance.NodeObjs[9, 3].transform.position, team2Rot, team2Units, team2Tex);
         addUnit(spearManPrefab, Team.Team2, Grid.instance.NodeObjs[9, 4].transform.position, team2Rot, team2Units, team2Tex);
         addUnit(archerPrefab, Team.Team2, Grid.instance.NodeObjs[9, 5].transform.position, team2Rot, team2Units, team2Tex);
 
@@ -111,12 +113,23 @@ public class GameManager : MonoBehaviour {
         Grid.instance.setNodeStatus(Grid.instance.NodeObjs[9, 5], NodeStatus.Occupied);
 
 
-        Unit.OnAttackComplete = onUnitAttackComplete;
         Unit.OnMoveComplete = onUnitMoveComplete;
         Unit.OnUnitIdle = onUnitIdle;
+        Unit.OnDead = onUnitDead;
     }
 
-    private void addUnit(GameObject unitPrefab, Team team,Vector3 pos, Quaternion rot, List<Unit> teamUnits, Texture texture = null)
+    private void onUnitDead(Unit unit)
+    {
+        GameObject nodeObj = Grid.instance.getNodeObjFromPosition(unit.transform.position);
+        nodeObj.GetComponent<Node>().changeStatus(NodeStatus.Normal);
+        team2Units.Remove(unit);
+        if (team2Units.Count == 0)
+            EndingIndicator.instance.Show("胜利！！");
+        else
+            selectedUnit.setStatus(UnitStatus.Idle);
+    }
+
+    private void addUnit(GameObject unitPrefab, Team team, Vector3 pos, Quaternion rot, List<Unit> teamUnits, Texture texture = null)
     {
         GameObject unitObj = Instantiate(unitPrefab, pos, rot);
         Unit unit = unitObj.GetComponent<Unit>();
@@ -132,7 +145,7 @@ public class GameManager : MonoBehaviour {
         if (selectedUnit != null)
             selectedUnitStatus = selectedUnit.Status;
 
-        if (selectedUnitStatus != UnitStatus.Moving 
+        if (selectedUnitStatus != UnitStatus.Moving
             && selectedUnitStatus != UnitStatus.Attacking
             && selectedUnitStatus != UnitStatus.Moved)
         {
@@ -165,7 +178,7 @@ public class GameManager : MonoBehaviour {
                 }
             }
         }
-        else if(selectedUnitStatus == UnitStatus.Moved)
+        else if (selectedUnitStatus == UnitStatus.Moved)
         {
             Node hitNode = getHitObject<Node>(clickPos, 1 << nodeLayer);
             if (hitNode != null)
@@ -177,6 +190,7 @@ public class GameManager : MonoBehaviour {
                     Vector3 faceDir = (hitNode.transform.position - selectedUnit.transform.position).normalized;
                     faceDir.y = 0;
                     selectedUnit.transform.forward = faceDir;
+                    Grid.instance.clear();
                     selectedUnit.attack(Grid.instance.getUnitOnNode(hitNode));
                 }
             }
@@ -201,11 +215,6 @@ public class GameManager : MonoBehaviour {
         BattleMenu.instance.show();
     }
 
-    private  void onUnitAttackComplete()
-    {
-        Grid.instance.clear();
-    }
-
     private void setSelectedUnit(Unit unit)
     {
         Grid.instance.clear();
@@ -228,20 +237,18 @@ public class GameManager : MonoBehaviour {
     public void switchTeam()
     {
         selectedUnit = null;
-        switch(currentTurnTeam)
+        switch (currentTurnTeam)
         {
             case Team.Team1://切换到敌人
 
                 resetTeamStatus(team1Units);
                 currentTurnTeam = Team.Team2;
                 currentNotPlayedUnits = new List<Unit>(team2Units);
-                AIController.playerTeam = team1Units;
-                AIController.enermyTeam = team2Units;
                 TurnIdicator.OnEnd += AIController.OnTurnIndicatorEnd;
                 TurnIdicator.instance.showTurn("Enermy's Turn", Color.red);
-                Unit.OnAttackComplete = AIController.onUnitAttackComplete;
                 Unit.OnUnitIdle = AIController.onUnitIdle;
                 Unit.OnMoveComplete = AIController.onUnitMoveComplete;
+                Unit.OnDead = AIController.onUnitDead;
                 break;
             case Team.Team2:
                 resetTeamStatus(team2Units);
@@ -249,16 +256,16 @@ public class GameManager : MonoBehaviour {
                 currentNotPlayedUnits = new List<Unit>(team1Units);
                 TurnIdicator.OnEnd -= AIController.OnTurnIndicatorEnd;
                 TurnIdicator.instance.showTurn("Turn " + ++turnCount, Color.blue);
-                Unit.OnAttackComplete = onUnitAttackComplete;
                 Unit.OnUnitIdle = onUnitIdle;
                 Unit.OnMoveComplete = onUnitMoveComplete;
+                Unit.OnDead = onUnitDead;
                 break;
         }
     }
 
     private void resetTeamStatus(List<Unit> teamUnits)
     {
-        foreach(Unit unit in teamUnits)
+        foreach (Unit unit in teamUnits)
         {
             unit.setStatus(UnitStatus.Ready);
         }

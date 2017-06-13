@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using Character;
 using GridSystem;
 using System;
+using UI;
 
 public class AIController {
     public static bool isEnermyMoving = false;
-
-    public static List<Unit> enermyTeam;
-    public static List<Unit> playerTeam;
 
     private static int enermyIndex;
     private static Unit attackee;
@@ -22,16 +20,16 @@ public class AIController {
 
     private static void nextEnermyUnit()
     {
-        Unit enermyUnit = enermyTeam[enermyIndex];
+        Unit enermyUnit = GameManager.team2Units[enermyIndex];
         List<GameObject> path = getPathToNearestPlayerUnit();
         enermyUnit.move(path);
     }
 
     private static List<GameObject> getPathToNearestPlayerUnit()
     {
-        Unit enermyUnit = enermyTeam[enermyIndex];
+        Unit enermyUnit = GameManager.team2Units[enermyIndex];
         List<GameObject> minPath = null;
-        foreach (Unit playerUnit in playerTeam)
+        foreach (Unit playerUnit in GameManager.team1Units)
         {
             GameObject startNodeObj = Grid.instance.getNodeObjFromPosition(enermyUnit.transform.position);
             GameObject endNodeObj = Grid.instance.getNodeObjFromPosition(playerUnit.transform.position);
@@ -53,15 +51,10 @@ public class AIController {
         return minPath;
     }
 
-    public static void onUnitAttackComplete()
-    {
-        //Unit enermyUnit = enermyTeam[enermyIndex];
-        //enermyUnit.setStatus(UnitStatus.Idle);
-    }
     public static void onUnitIdle(Unit enermyUnit)
     {
         enermyIndex++;
-        if (enermyIndex < enermyTeam.Count)
+        if (enermyIndex < GameManager.team2Units.Count)
             nextEnermyUnit();
         else
         {
@@ -71,10 +64,24 @@ public class AIController {
     }
     public static void onUnitMoveComplete()
     {
-        Unit enermyUnit = enermyTeam[enermyIndex];
+        Unit enermyUnit = GameManager.team2Units[enermyIndex];
         if (attackee != null)
             enermyUnit.attack(attackee);
         else
             enermyUnit.setStatus(UnitStatus.Idle);
     }
+
+    internal static void onUnitDead(Unit unit)
+    {
+        GameObject nodeObj = Grid.instance.getNodeObjFromPosition(unit.transform.position);
+        nodeObj.GetComponent<Node>().changeStatus(NodeStatus.Normal);
+        GameManager.team1Units.Remove(unit);
+        Unit enermyUnit = GameManager.team2Units[enermyIndex];
+        if(GameManager.team1Units.Count == 0)
+            EndingIndicator.instance.Show("失败！！");
+        else
+            enermyUnit.setStatus(UnitStatus.Idle);
+
+    }
 }
+

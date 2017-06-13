@@ -20,7 +20,6 @@ namespace UI
                 Destroy(gameObject);
             }
             instance = this;
-            DontDestroyOnLoad(gameObject);
 
             textTrans = transform.GetChild(0);
             gameObject.SetActive(false);

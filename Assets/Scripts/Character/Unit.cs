@@ -33,15 +33,16 @@ namespace Character
         private Animator animator;
 
         private HealthBar healthBar;
-        public static Action OnAttackComplete;
         private Unit attackee;
 
         public static Action<Unit> OnUnitIdle;
         public static Action OnMoveComplete;
+        public static Action<Unit> OnDead;
 
         private Vector3 returnPos;
         private Quaternion returnRot;
 
+        bool canIdle; //攻击动作完成后，需不需要等待被攻击unit死亡动画再idle
         void Start()
         {
 
@@ -71,7 +72,7 @@ namespace Character
         public void cancelMove()
         {
             GameObject nodeObj = Grid.instance.getNodeObjFromPosition(transform.position);
-            Grid.instance.setNodeStatus(nodeObj,NodeStatus.Normal);
+            Grid.instance.setNodeStatus(nodeObj, NodeStatus.Normal);
             transform.position = returnPos;
             transform.rotation = returnRot;
             nodeObj = Grid.instance.getNodeObjFromPosition(transform.position);
@@ -169,24 +170,41 @@ namespace Character
                     status = UnitStatus.Ready;
                     renderer1.material.color = Color.white;
                     break;
-
             }
         }
 
-        public void takeDamage(int damage)
+        public void takeDamage(Unit attacker,int damage)
         {
-            healthBar.setHp(healthBar.getHp() - damage);
+            int curHp = healthBar.getHp() - damage;
+            if (curHp <= 0)
+            {
+                healthBar.setHp(0);
+                attacker.canIdle = false;
+                animator.SetTrigger("die");                
+            }
+            else
+            {
+                healthBar.setHp(healthBar.getHp() - damage);
+                attacker.canIdle = true;
+            }
         }
 
         public void attackAminComplete()
         {
-            setStatus(UnitStatus.Idle);
-            OnAttackComplete();
+            if(canIdle)
+                setStatus(UnitStatus.Idle);
         }
 
         public void attackHit()
         {
-            attackee.takeDamage(attackPower - attackee.defence);
+            attackee.takeDamage(this, attackPower - attackee.defence);
+        }
+
+        public void die()
+        {
+            Destroy(gameObject);
+            Destroy(healthBar.gameObject);
+            OnDead(this);
         }
     }
 
