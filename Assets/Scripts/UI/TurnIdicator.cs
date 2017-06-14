@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 namespace UI
 {
@@ -9,12 +10,11 @@ namespace UI
     {
         public static TurnIdicator instance;
         public static event EventHandler OnEnd;
-        public float acceleration = 500f;
-        // Use this for initialization
+        public AnimationCurve animationCurve;
         private Transform textTrans;
+        private RectTransform textRectTrans;
         void Start()
         {
-
             if (instance != null && instance != this)
             {
                 Destroy(gameObject);
@@ -23,6 +23,7 @@ namespace UI
 
             textTrans = transform.GetChild(0);
             gameObject.SetActive(false);
+            textRectTrans = textTrans.GetComponent<RectTransform>();
         }
 
         public void showTurn(string msg, Color color)
@@ -30,45 +31,14 @@ namespace UI
             Text turnText = textTrans.GetComponent<Text>();
             turnText.color = color;
             turnText.text = msg;
-
             gameObject.SetActive(true);
-            StartCoroutine(show());
+            Tweener tw = textRectTrans.DOMoveX(Screen.width, 2).SetEase(animationCurve);
+            tw.OnComplete(()=>{
+                textRectTrans.anchoredPosition = Vector2.zero;
+                gameObject.SetActive(false);
+                if (OnEnd != null)
+                    OnEnd(this, null);
+            });
         }
-
-        private IEnumerator show()
-        {
-            float x = 0;
-
-            RectTransform textRectTrans = textTrans.GetComponent<RectTransform>();
-
-            textRectTrans.anchoredPosition = new Vector2(0, 0);
-
-            float minSpeed = Screen.width / 20;
-            float maxSpeed = Screen.width;
-            float speed = maxSpeed;
-            x = 0;
-            while (x != Screen.width / 2)
-            {
-                speed = Mathf.Max(speed - acceleration * Time.deltaTime, minSpeed);
-                x = Mathf.MoveTowards(x, Screen.width / 2, speed * Time.deltaTime);
-                textRectTrans.anchoredPosition = new Vector2(x, 0);
-                yield return null;
-            }
-            yield return new WaitForSeconds(1f);
-            while (x != Screen.width)
-            {
-                speed = Mathf.Min(speed + acceleration * Time.deltaTime, maxSpeed);
-                x = Mathf.MoveTowards(x, Screen.width, speed * Time.deltaTime);
-                textRectTrans.anchoredPosition = new Vector2(x, 0);
-                yield return null;
-            }
-
-            gameObject.SetActive(false);
-
-            if(OnEnd != null)
-                OnEnd(this,null);
-        }
-
     }
-    
 }

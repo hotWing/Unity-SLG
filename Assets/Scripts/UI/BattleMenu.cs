@@ -44,7 +44,7 @@ namespace UI
             cancelBtn.onClick.AddListener(onCancelBtnClick);
 
             RectTransform rectTrans = GetComponent<RectTransform>();
-            rectTrans.anchoredPosition = new Vector2(50, 50);
+            rectTrans.anchoredPosition = new Vector2(100, 100);
             isMouseover = false;
         }
 
@@ -68,7 +68,7 @@ namespace UI
         {
             IdleBtnObj.SetActive(false);
             RectTransform rectTrans = GetComponent<RectTransform>();
-            rectTrans.anchoredPosition = new Vector2(50, 50);
+            rectTrans.anchoredPosition = new Vector2(100, 100);
         }
 
         public void show()
