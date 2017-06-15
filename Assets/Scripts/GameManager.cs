@@ -141,6 +141,7 @@ public class GameManager : MonoBehaviour
 
     void OnClick(Vector2 clickPos)
     {
+
         UnitStatus selectedUnitStatus = UnitStatus.Null;
         if (selectedUnit != null)
             selectedUnitStatus = selectedUnit.Status;
@@ -150,14 +151,26 @@ public class GameManager : MonoBehaviour
             && selectedUnitStatus != UnitStatus.Moved)
         {
             Node hitNode = getHitObject<Node>(clickPos, 1 << nodeLayer);
+
+            //点击node外区域或点击normal node都需要清理grid和unitStatusUI
+            if (hitNode == null || hitNode.Status == NodeStatus.Normal)
+            {
+                Grid.instance.clear();
+                UnitStatusUI.instance.Hide();
+            }
+
             if (hitNode != null)
             {
                 if (hitNode.Status == NodeStatus.Occupied)
                 {
                     Unit hitUnit = Grid.instance.getUnitOnNode(hitNode);
-                    if (hitUnit != null && hitUnit.Status == UnitStatus.Ready && hitUnit.Team == currentTurnTeam)
+                    if (hitUnit != null)
                     {
-                        setSelectedUnit(hitUnit);
+                        //显示状态,无论我方地方
+                        UnitStatusUI.instance.Show(hitUnit);
+
+                        if(hitUnit.Status == UnitStatus.Ready && hitUnit.Team == currentTurnTeam)
+                            setSelectedUnit(hitUnit);
                     }
                 }
                 else if (hitNode.Status == NodeStatus.Attackable)
@@ -217,7 +230,6 @@ public class GameManager : MonoBehaviour
 
     private void setSelectedUnit(Unit unit)
     {
-        Grid.instance.clear();
         selectedUnit = unit;
         selectedUnitNodeObj = Grid.instance.getNodeObjFromPosition(unit.transform.position);
         Grid.instance.hightLightUnitMovable();

@@ -10,6 +10,7 @@ namespace Character
     [RequireComponent(typeof(Rigidbody), typeof(Animator))]
     public class Unit : MonoBehaviour
     {
+        public string name = "";
         public int speed = 2;
         public int attackRange = 1;
         public int attackPower = 10;
