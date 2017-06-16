@@ -66,7 +66,7 @@ public class AIController {
     {
         Unit enermyUnit = GameManager.team2Units[enermyIndex];
         if (attackee != null)
-            enermyUnit.attack(attackee);
+            enermyUnit.attack(attackee,false);
         else
             enermyUnit.setStatus(UnitStatus.Idle);
     }

@@ -10,7 +10,7 @@ namespace Character
     [RequireComponent(typeof(Rigidbody), typeof(Animator))]
     public class Unit : MonoBehaviour
     {
-        public string name = "";
+        public string unitName = "";
         public int speed = 2;
         public int attackRange = 1;
         public int attackPower = 10;
@@ -42,7 +42,7 @@ namespace Character
 
         private Vector3 returnPos;
         private Quaternion returnRot;
-
+        private AttackType attackType;
         bool canIdle; //攻击动作完成后，需不需要等待被攻击unit死亡动画再idle
         void Start()
         {
@@ -53,6 +53,7 @@ namespace Character
             GameObject nodeObj = Grid.instance.getNodeObjFromPosition(transform.position);
             Grid.instance.setNodeStatus(nodeObj, NodeStatus.Occupied);
             setStatus(UnitStatus.Ready);
+            attackType = AttackType.Normal;
             initHealthBar();
         }
 
@@ -124,16 +125,25 @@ namespace Character
         }
 
 
-        public void attack(Unit attackee)
+        public void attack(Unit attackee, bool isPlayer = true)
         {
             status = UnitStatus.Attacking;
 
             Vector3 faceDir = (attackee.transform.position - transform.position).normalized;
             faceDir.y = 0;
             transform.forward = faceDir;
-
-            animator.SetTrigger("attack");
             this.attackee = attackee;
+            if(isPlayer)
+            {
+                AttackUI.instance.Show((at) => {
+                    attackType = at;
+                    animator.SetTrigger("attack");
+                });
+            }
+            else
+                animator.SetTrigger("attack");
+
+
         }
 
         private void playRunAnim()
@@ -198,7 +208,15 @@ namespace Character
 
         public void attackHit()
         {
-            attackee.takeDamage(this, attackPower - attackee.defence);
+            string dmgStr = "MISS";
+            Vector2 dmgUIPos = RectTransformUtility.WorldToScreenPoint(Camera.main, attackee.transform.position);
+            int dmg = Math.Max(0, attackPower * (int)attackType / 10 - attackee.defence);
+
+            if (AttackType.Miss != attackType)
+                dmgStr = dmg.ToString();
+            DamageUI.instance.Show(dmgUIPos, dmgStr);
+
+            attackee.takeDamage(this, dmg);
         }
 
         public void die()
@@ -217,6 +235,13 @@ namespace Character
         Moved,
         Attacking,
         Null
+    }
+
+    public enum AttackType
+    {
+        Normal = 10,
+        Critical = 20,
+        Miss =0
     }
 
 }

@@ -101,16 +101,16 @@ public class GameManager : MonoBehaviour
         Quaternion team2Rot = Quaternion.Euler(0, 270, 0);
         Texture team2Tex = Resources.Load("Textures/WK_StandardUnits_Red") as Texture;
         team2Units = new List<Unit>();
-        addUnit(swordManPrefab, Team.Team2, Grid.instance.NodeObjs[9, 3].transform.position, team2Rot, team2Units, team2Tex);
-        addUnit(spearManPrefab, Team.Team2, Grid.instance.NodeObjs[9, 4].transform.position, team2Rot, team2Units, team2Tex);
-        addUnit(archerPrefab, Team.Team2, Grid.instance.NodeObjs[9, 5].transform.position, team2Rot, team2Units, team2Tex);
+        addUnit(swordManPrefab, Team.Team2, Grid.instance.NodeObjs[2, 3].transform.position, team2Rot, team2Units, team2Tex);
+        addUnit(spearManPrefab, Team.Team2, Grid.instance.NodeObjs[2, 4].transform.position, team2Rot, team2Units, team2Tex);
+        addUnit(archerPrefab, Team.Team2, Grid.instance.NodeObjs[2, 5].transform.position, team2Rot, team2Units, team2Tex);
 
         Grid.instance.setNodeStatus(Grid.instance.NodeObjs[0, 3], NodeStatus.Occupied);
         Grid.instance.setNodeStatus(Grid.instance.NodeObjs[0, 4], NodeStatus.Occupied);
         Grid.instance.setNodeStatus(Grid.instance.NodeObjs[0, 5], NodeStatus.Occupied);
-        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[9, 3], NodeStatus.Occupied);
-        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[9, 4], NodeStatus.Occupied);
-        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[9, 5], NodeStatus.Occupied);
+        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[2, 3], NodeStatus.Occupied);
+        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[2, 4], NodeStatus.Occupied);
+        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[2, 5], NodeStatus.Occupied);
 
 
         Unit.OnMoveComplete = onUnitMoveComplete;
@@ -141,70 +141,72 @@ public class GameManager : MonoBehaviour
 
     void OnClick(Vector2 clickPos)
     {
-
-        UnitStatus selectedUnitStatus = UnitStatus.Null;
-        if (selectedUnit != null)
-            selectedUnitStatus = selectedUnit.Status;
-
-        if (selectedUnitStatus != UnitStatus.Moving
-            && selectedUnitStatus != UnitStatus.Attacking
-            && selectedUnitStatus != UnitStatus.Moved)
+        if (!AttackUI.showing)
         {
-            Node hitNode = getHitObject<Node>(clickPos, 1 << nodeLayer);
+            UnitStatus selectedUnitStatus = UnitStatus.Null;
+            if (selectedUnit != null)
+                selectedUnitStatus = selectedUnit.Status;
 
-            //点击node外区域或点击normal node都需要清理grid和unitStatusUI
-            if (hitNode == null || hitNode.Status == NodeStatus.Normal)
+            if (selectedUnitStatus != UnitStatus.Moving
+                && selectedUnitStatus != UnitStatus.Attacking
+                && selectedUnitStatus != UnitStatus.Moved)
             {
-                Grid.instance.clear();
-                UnitStatusUI.instance.Hide();
-            }
+                Node hitNode = getHitObject<Node>(clickPos, 1 << nodeLayer);
 
-            if (hitNode != null)
-            {
-                if (hitNode.Status == NodeStatus.Occupied)
+                //点击node外区域或点击normal node都需要清理grid和unitStatusUI
+                if (hitNode == null || hitNode.Status == NodeStatus.Normal)
                 {
-                    Unit hitUnit = Grid.instance.getUnitOnNode(hitNode);
-                    if (hitUnit != null)
-                    {
-                        //显示状态,无论我方地方
-                        UnitStatusUI.instance.Show(hitUnit);
+                    Grid.instance.clear();
+                    UnitStatusUI.instance.Hide();
+                }
 
-                        if(hitUnit.Status == UnitStatus.Ready && hitUnit.Team == currentTurnTeam)
-                            setSelectedUnit(hitUnit);
+                if (hitNode != null)
+                {
+                    if (hitNode.Status == NodeStatus.Occupied)
+                    {
+                        Unit hitUnit = Grid.instance.getUnitOnNode(hitNode);
+                        if (hitUnit != null)
+                        {
+                            //显示状态,无论我方地方
+                            UnitStatusUI.instance.Show(hitUnit);
+
+                            if (hitUnit.Status == UnitStatus.Ready && hitUnit.Team == currentTurnTeam)
+                                setSelectedUnit(hitUnit);
+                        }
+                    }
+                    else if (hitNode.Status == NodeStatus.Attackable)
+                    {
+                        //Vector3 faceDir = (hitNode.transform.position - selectedUnit.transform.position).normalized;
+                        //faceDir.y = 0;
+                        //selectedUnit.transform.forward = faceDir;
+                        selectedUnit.attack(Grid.instance.getUnitOnNode(hitNode));
+                        Grid.instance.clear();
+                        BattleMenu.instance.hideIdle();
+                    }
+                    else if (hitNode.Status == NodeStatus.Movable)
+                    {
+                        List<GameObject> path = Grid.instance.getShortestPath(selectedUnitNodeObj, hitNode.gameObject);
+                        selectedUnit.move(path);
+                        Grid.instance.clear();
+                        BattleMenu.instance.hideIdle();
                     }
                 }
-                else if (hitNode.Status == NodeStatus.Attackable)
-                {
-                    //Vector3 faceDir = (hitNode.transform.position - selectedUnit.transform.position).normalized;
-                    //faceDir.y = 0;
-                    //selectedUnit.transform.forward = faceDir;
-                    selectedUnit.attack(Grid.instance.getUnitOnNode(hitNode));
-                    Grid.instance.clear();
-                    BattleMenu.instance.hideIdle();
-                }
-                else if (hitNode.Status == NodeStatus.Movable)
-                {
-                    List<GameObject> path = Grid.instance.getShortestPath(selectedUnitNodeObj, hitNode.gameObject);
-                    selectedUnit.move(path);
-                    Grid.instance.clear();
-                    BattleMenu.instance.hideIdle();
-                }
             }
-        }
-        else if (selectedUnitStatus == UnitStatus.Moved)
-        {
-            Node hitNode = getHitObject<Node>(clickPos, 1 << nodeLayer);
-            if (hitNode != null)
+            else if (selectedUnitStatus == UnitStatus.Moved)
             {
-                if (hitNode.Status == NodeStatus.Attackable)
+                Node hitNode = getHitObject<Node>(clickPos, 1 << nodeLayer);
+                if (hitNode != null)
                 {
-                    BattleMenu.instance.hide();
+                    if (hitNode.Status == NodeStatus.Attackable)
+                    {
+                        BattleMenu.instance.hide();
 
-                    Vector3 faceDir = (hitNode.transform.position - selectedUnit.transform.position).normalized;
-                    faceDir.y = 0;
-                    selectedUnit.transform.forward = faceDir;
-                    Grid.instance.clear();
-                    selectedUnit.attack(Grid.instance.getUnitOnNode(hitNode));
+                        Vector3 faceDir = (hitNode.transform.position - selectedUnit.transform.position).normalized;
+                        faceDir.y = 0;
+                        selectedUnit.transform.forward = faceDir;
+                        Grid.instance.clear();
+                        selectedUnit.attack(Grid.instance.getUnitOnNode(hitNode));
+                    }
                 }
             }
         }

@@ -26,7 +26,7 @@ public class UnitStatusUI : MonoBehaviour
 
     public void Show(Unit unit)
     {
-        nameText.text = unit.name;
+        nameText.text = unit.unitName;
         atkPwrText.text = unit.attackPower.ToString();
         defText.text = unit.defence.ToString();
         atkRngText.text = unit.attackRange.ToString();
