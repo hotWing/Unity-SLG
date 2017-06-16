@@ -91,6 +91,7 @@ public class GameManager : MonoBehaviour
         GameObject swordManPrefab = Resources.Load("Prefabs/Units/SwordMan") as GameObject;
         GameObject spearManPrefab = Resources.Load("Prefabs/Units/SpearMan") as GameObject;
         GameObject archerPrefab = Resources.Load("Prefabs/Units/Archer") as GameObject;
+        GameObject skeletonPrefab = Resources.Load("Prefabs/Units/Skeleton") as GameObject;
 
         Quaternion team1Rot = Quaternion.Euler(0, 90, 0);
         team1Units = new List<Unit>();
@@ -104,6 +105,7 @@ public class GameManager : MonoBehaviour
         addUnit(swordManPrefab, Team.Team2, Grid.instance.NodeObjs[2, 3].transform.position, team2Rot, team2Units, team2Tex);
         addUnit(spearManPrefab, Team.Team2, Grid.instance.NodeObjs[2, 4].transform.position, team2Rot, team2Units, team2Tex);
         addUnit(archerPrefab, Team.Team2, Grid.instance.NodeObjs[2, 5].transform.position, team2Rot, team2Units, team2Tex);
+        addUnit(skeletonPrefab, Team.Team2, Grid.instance.NodeObjs[3, 5].transform.position, team2Rot, team2Units, team2Tex);
 
         Grid.instance.setNodeStatus(Grid.instance.NodeObjs[0, 3], NodeStatus.Occupied);
         Grid.instance.setNodeStatus(Grid.instance.NodeObjs[0, 4], NodeStatus.Occupied);
@@ -111,7 +113,7 @@ public class GameManager : MonoBehaviour
         Grid.instance.setNodeStatus(Grid.instance.NodeObjs[2, 3], NodeStatus.Occupied);
         Grid.instance.setNodeStatus(Grid.instance.NodeObjs[2, 4], NodeStatus.Occupied);
         Grid.instance.setNodeStatus(Grid.instance.NodeObjs[2, 5], NodeStatus.Occupied);
-
+        Grid.instance.setNodeStatus(Grid.instance.NodeObjs[3, 5], NodeStatus.Occupied);
 
         Unit.OnMoveComplete = onUnitMoveComplete;
         Unit.OnUnitIdle = onUnitIdle;
@@ -232,6 +234,7 @@ public class GameManager : MonoBehaviour
 
     private void setSelectedUnit(Unit unit)
     {
+        Grid.instance.clear();
         selectedUnit = unit;
         selectedUnitNodeObj = Grid.instance.getNodeObjFromPosition(unit.transform.position);
         Grid.instance.hightLightUnitMovable();

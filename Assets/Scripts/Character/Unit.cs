@@ -10,6 +10,8 @@ namespace Character
     [RequireComponent(typeof(Rigidbody), typeof(Animator))]
     public class Unit : MonoBehaviour
     {
+        private static GameObject criticalAtkParticle;
+
         public string unitName = "";
         public int speed = 2;
         public int attackRange = 1;
@@ -46,6 +48,8 @@ namespace Character
         bool canIdle; //攻击动作完成后，需不需要等待被攻击unit死亡动画再idle
         void Start()
         {
+            if(criticalAtkParticle == null)
+                criticalAtkParticle = Resources.Load("Prefabs/Particles/criticalAtk") as GameObject;
 
             rigBody = GetComponent<Rigidbody>();
             animator = GetComponent<Animator>();
@@ -133,17 +137,29 @@ namespace Character
             faceDir.y = 0;
             transform.forward = faceDir;
             this.attackee = attackee;
+
+            
+
             if(isPlayer)
             {
                 AttackUI.instance.Show((at) => {
                     attackType = at;
-                    animator.SetTrigger("attack");
+                    StartCoroutine(PlayAtkAnim());
                 });
             }
             else
                 animator.SetTrigger("attack");
+        }
 
-
+        private IEnumerator PlayAtkAnim()
+        {
+            if(attackType == AttackType.Critical)
+            {
+                ParticleSystem ps = Instantiate(criticalAtkParticle, transform.position, transform.rotation).GetComponent<ParticleSystem>();
+                yield return new WaitForSeconds(ps.main.duration);
+                Destroy(ps.gameObject);
+            }
+            animator.SetTrigger("attack");
         }
 
         private void playRunAnim()
