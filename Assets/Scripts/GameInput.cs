@@ -21,12 +21,12 @@ public class GameInput:MonoBehaviour{
                 //}
             }
 
-
 #else
             if(Input.touchCount > 0 && !BattleMenu.isMouseover)
             {
                 Touch touch = Input.GetTouch(0);
-                OnClick(touch.position);
+                if(touch.phase == TouchPhase.Ended)
+                    OnClick(touch.position);
             }
 #endif
         }
